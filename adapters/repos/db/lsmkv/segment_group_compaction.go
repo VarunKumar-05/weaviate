@@ -185,6 +185,33 @@ func (sg *SegmentGroup) findCompactionCandidates() (pair []int, level uint16) {
 
 	*/
 
+	var lPos int
+	var lSeg, rSeg Segment
+	var lLvl, rLvl, maxOrderedLvl uint16
+
+	isUnordered := false
+
+	for i := len(sg.segments) - 2; i >= 0; i-- {
+		lPos = i
+		lSeg, rSeg = sg.segments[lPos], sg.segments[lPos+1]
+		lLvl, rLvl = lSeg.getLevel(), rSeg.getLevel()
+
+		maxOrderedLvl = lLvl
+		if lLvl < rLvl {
+			isUnordered = true
+			maxOrderedLvl = rLvl
+			break
+		}
+	}
+
+	if isUnordered {
+		// just one unordered segment, merge with right one, keep right one's level
+		if lPos == 0 {
+			return []int{lPos, lPos + 1}, rLvl
+		}
+	}
+	_ = maxOrderedLvl
+
 	matchingPairFound := false
 	leftoverPairFound := false
 	var matchingLeftId, leftoverLeftId int
