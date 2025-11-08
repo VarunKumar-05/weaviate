@@ -176,7 +176,6 @@ func (sg *SegmentGroup) findCompactionCandidates() (pair []int, level uint16) {
 	   10 09 08 07 06 05_..    05                07    12 11 10 09 08 07 06
 	   10 09 08 07 06 06_______..                07    12 11 10 09 08 07 06
 	   10 09 08 07 07_..                         07    12 11 10 09 08 07 06
-	   10 09 08 07 07_..                         07    12 11 10 09 08 07 06
 	   10 09 08 08_..                            07    12 11 10 09 08 07 06
 	   10 09 08 08_______________________________..    12 11 10 09 08 07 06
 	   10 09 09_..                                     12 11 10 09 08 07 06
@@ -205,12 +204,42 @@ func (sg *SegmentGroup) findCompactionCandidates() (pair []int, level uint16) {
 	}
 
 	if isUnordered {
-		// just one unordered segment, merge with right one, keep right one's level
+		// just one unordered segment (left). merge with right one, keep right one's level
 		if lPos == 0 {
 			return []int{lPos, lPos + 1}, rLvl
 		}
+
+		var candidatePos int
+		var candidateLvl uint16
+		candidateFound := false
+		for i := lPos - 1; i >= 0; i-- {
+			lPos = i
+			lSeg, rSeg = sg.segments[lPos], sg.segments[lPos+1]
+			lLvl, rLvl = lSeg.getLevel(), rSeg.getLevel()
+
+			if lLvl > rLvl {
+				if !candidateFound {
+					// if left segment is the 1st one (right being 2nd), take max ordered level as compacted one
+					// to match ordered segments, otherwise keeps left+right ones' level
+					if lPos == 0 {
+						return []int{lPos, lPos + 1}, maxOrderedLvl
+					}
+					return []int{lPos, lPos + 1}, lLvl
+				}
+				break
+			}
+			if lLvl == rLvl {
+				candidatePos = lPos
+				candidateLvl = lLvl + 1
+				candidateFound = true
+			}
+		}
+		if candidateFound {
+			return []int{candidatePos, candidatePos + 1}, candidateLvl
+		}
+		// left level < right level
+		return []int{lPos, lPos + 1}, rLvl
 	}
-	_ = maxOrderedLvl
 
 	matchingPairFound := false
 	leftoverPairFound := false
