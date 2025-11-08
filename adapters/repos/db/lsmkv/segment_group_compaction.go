@@ -248,45 +248,44 @@ func (sg *SegmentGroup) findCompactionCandidates() (pair []int, level uint16) {
 
 	*/
 
-	var lPos int
-	var lSeg, rSeg Segment
-	var lLvl, rLvl, maxOrderedLvl uint16
+	var lPos, orderedPos int
+	var lLvl, rLvl, orderedLvl uint16
 
 	isUnordered := false
 
 	for i := len(sg.segments) - 2; i >= 0; i-- {
 		lPos = i
-		lSeg, rSeg = sg.segments[lPos], sg.segments[lPos+1]
-		lLvl, rLvl = lSeg.getLevel(), rSeg.getLevel()
+		lLvl, rLvl = sg.segments[lPos].getLevel(), sg.segments[lPos+1].getLevel()
 
-		maxOrderedLvl = lLvl
+		orderedLvl = lLvl
+		orderedPos = lPos
 		if lLvl < rLvl {
 			isUnordered = true
-			maxOrderedLvl = rLvl
+			orderedLvl = rLvl
+			orderedPos = lPos + 1
 			break
 		}
 	}
 
 	if isUnordered {
 		// just one unordered segment (left). merge with right one, keep right one's level
-		if lPos == 0 {
-			return []int{lPos, lPos + 1}, rLvl
+		if orderedPos == 1 {
+			return []int{0, 1}, orderedLvl
 		}
 
 		var candidatePos int
 		var candidateLvl uint16
 		candidateFound := false
-		for i := lPos - 1; i >= 0; i-- {
+		for i := orderedPos - 2; i >= 0; i-- {
 			lPos = i
-			lSeg, rSeg = sg.segments[lPos], sg.segments[lPos+1]
-			lLvl, rLvl = lSeg.getLevel(), rSeg.getLevel()
+			lLvl, rLvl = sg.segments[lPos].getLevel(), sg.segments[lPos+1].getLevel()
 
 			if lLvl > rLvl {
 				if !candidateFound {
 					// if left segment is the 1st one (right being 2nd), take max ordered level as compacted one
 					// to match ordered segments, otherwise keeps left+right ones' level
 					if lPos == 0 {
-						return []int{lPos, lPos + 1}, maxOrderedLvl
+						return []int{lPos, lPos + 1}, orderedLvl
 					}
 					return []int{lPos, lPos + 1}, lLvl
 				}
@@ -302,7 +301,10 @@ func (sg *SegmentGroup) findCompactionCandidates() (pair []int, level uint16) {
 			return []int{candidatePos, candidatePos + 1}, candidateLvl
 		}
 		// left level < right level
-		return []int{lPos, lPos + 1}, rLvl
+		if orderedPos == 2 {
+			return []int{0, 1}, orderedLvl
+		}
+		return []int{0, 1}, rLvl
 	}
 
 	return nil, 0

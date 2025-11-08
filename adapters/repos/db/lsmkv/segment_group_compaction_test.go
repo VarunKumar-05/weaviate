@@ -91,6 +91,156 @@ func TestSegmentGroup_BestCompactionPair(t *testing.T) {
 	}
 }
 
+func TestSegmentGroup_CompactionPairToFixLevelsOrder(t *testing.T) {
+	var maxSegmentSize int64 = 10000
+
+	/*
+
+	   06 07 09 08 07 06 05 04 03 05 04 03 02 01 00 07 06 12 11 10 09 08 07 06
+	   06 07 09 08 07 06 05 04 03 05 04 03 02 01 00 07_.. 12 11 10 09 08 07 06
+	   06 07 09 08 07 06 05 04 03 05 04 03 02 01_.. 07    12 11 10 09 08 07 06
+	   06 07 09 08 07 06 05 04 03 05 04 03 02_..    07    12 11 10 09 08 07 06
+	   06 07 09 08 07 06 05 04 03 05 04 03_..       07    12 11 10 09 08 07 06
+	   06 07 09 08 07 06 05 04 03 05 04_..          07    12 11 10 09 08 07 06
+	   06 07 09 08 07 06 05 04 03 05_..             07    12 11 10 09 08 07 06
+	   06 07 09 08 07 06 05 04_.. 05                07    12 11 10 09 08 07 06
+	   06 07 09 08 07 06 05_..    05                07    12 11 10 09 08 07 06
+	   06 07 09 08 07 06 06_______..                07    12 11 10 09 08 07 06
+	   06 07 09 08 07 07_..                         07    12 11 10 09 08 07 06
+	   06 07 09 08 08_..                            07    12 11 10 09 08 07 06
+	   06 07 09 08 08_______________________________..    12 11 10 09 08 07 06
+	   06 07 09 09_..                                     12 11 10 09 08 07 06
+	   06 07 10_..                                        12 11 10 09 08 07 06
+	   07_.. 10                                           12 11 10 09 08 07 06
+	   12_..                                              12 11 10 09 08 07 06
+	   13_________________________________________________.. 11 10 09 08 07 06
+
+	*/
+
+	testCases := []struct {
+		name     string
+		segments []Segment
+		expPair  []string
+		expLvl   uint16
+	}{
+		{
+			name: "1.1",
+			segments: []Segment{
+				&segment{size: 1000, path: "seg_8", level: 0},
+				&segment{size: 1000, path: "seg_7", level: 1},
+				&segment{size: 1000, path: "seg_6", level: 2},
+				&segment{size: 1000, path: "seg_5", level: 3},
+				&segment{size: 1000, path: "seg_4", level: 4},
+				&segment{size: 1000, path: "seg_3", level: 3},
+				&segment{size: 1000, path: "seg_2", level: 2},
+				&segment{size: 1000, path: "seg_1", level: 1},
+			},
+			expPair: []string{"seg_8", "seg_7"},
+			expLvl:  1,
+		},
+		{
+			name: "1.2",
+			segments: []Segment{
+				&segment{size: 1000, path: "seg_87", level: 1},
+				&segment{size: 1000, path: "seg_6", level: 2},
+				&segment{size: 1000, path: "seg_5", level: 3},
+				&segment{size: 1000, path: "seg_4", level: 4},
+				&segment{size: 1000, path: "seg_3", level: 3},
+				&segment{size: 1000, path: "seg_2", level: 2},
+				&segment{size: 1000, path: "seg_1", level: 1},
+			},
+			expPair: []string{"seg_87", "seg_6"},
+			expLvl:  2,
+		},
+		{
+			name: "1.3",
+			segments: []Segment{
+				&segment{size: 1000, path: "seg_876", level: 2},
+				&segment{size: 1000, path: "seg_5", level: 3},
+				&segment{size: 1000, path: "seg_4", level: 4},
+				&segment{size: 1000, path: "seg_3", level: 3},
+				&segment{size: 1000, path: "seg_2", level: 2},
+				&segment{size: 1000, path: "seg_1", level: 1},
+			},
+			expPair: []string{"seg_876", "seg_5"},
+			expLvl:  4,
+		},
+		{
+			name: "1.4",
+			segments: []Segment{
+				&segment{size: 1000, path: "seg_8765", level: 4},
+				&segment{size: 1000, path: "seg_4", level: 4},
+				&segment{size: 1000, path: "seg_3", level: 3},
+				&segment{size: 1000, path: "seg_2", level: 2},
+				&segment{size: 1000, path: "seg_1", level: 1},
+			},
+			expPair: []string{"seg_8765", "seg_4"},
+			expLvl:  5,
+		},
+		{
+			name: "1.5",
+			segments: []Segment{
+				&segment{size: 1000, path: "seg_87654", level: 5},
+				&segment{size: 1000, path: "seg_3", level: 3},
+				&segment{size: 1000, path: "seg_2", level: 2},
+				&segment{size: 1000, path: "seg_1", level: 1},
+			},
+			expPair: nil,
+			expLvl:  0,
+		},
+		// {
+		// 	name: "two segments, same level",
+		// 	segments: []Segment{
+		// 		&segment{size: 1000, path: "segment0", level: 0},
+		// 		&segment{size: 1000, path: "segment1", level: 0},
+		// 	},
+		// 	expectedPair: []string{"segment0", "segment1"},
+		// },
+		// {
+		// 	name: "multiple segments, multiple levels, lowest level is picked",
+		// 	segments: []Segment{
+		// 		&segment{size: 4000, path: "segment0", level: 2},
+		// 		&segment{size: 4000, path: "segment1", level: 2},
+		// 		&segment{size: 2000, path: "segment2", level: 1},
+		// 		&segment{size: 2000, path: "segment3", level: 1},
+		// 		&segment{size: 1000, path: "segment4", level: 0},
+		// 		&segment{size: 1000, path: "segment5", level: 0},
+		// 	},
+		// 	expectedPair: []string{"segment4", "segment5"},
+		// },
+		// {
+		// 	name: "two segments that don't fit the max size, but eliglbe segments of a lower level are present",
+		// 	segments: []Segment{
+		// 		&segment{size: 8000, path: "segment0", level: 3},
+		// 		&segment{size: 8000, path: "segment1", level: 3},
+		// 		&segment{size: 4000, path: "segment2", level: 2},
+		// 		&segment{size: 4000, path: "segment3", level: 2},
+		// 	},
+		// 	expectedPair: []string{"segment2", "segment3"},
+		// },
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			sg := &SegmentGroup{
+				segments:       tc.segments,
+				maxSegmentSize: maxSegmentSize,
+			}
+			pair, lvl := sg.findCompactionCandidates()
+
+			if tc.expPair == nil {
+				assert.Nil(t, pair)
+			} else {
+				require.NotNil(t, pair)
+				lPath := tc.segments[pair[0]].getPath()
+				rPath := tc.segments[pair[1]].getPath()
+				assert.Equal(t, tc.expPair, []string{lPath, rPath})
+			}
+			assert.Equal(t, tc.expLvl, lvl)
+		})
+	}
+}
+
 func TestSegmenGroup_CompactionLargerThanMaxSize(t *testing.T) {
 	maxSegmentSize := int64(10000)
 	// this test only tests the unhappy path which has an early exist condition,
