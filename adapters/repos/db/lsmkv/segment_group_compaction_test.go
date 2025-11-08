@@ -123,101 +123,209 @@ func TestSegmentGroup_CompactionPairToFixLevelsOrder(t *testing.T) {
 		expPair  []string
 		expLvl   uint16
 	}{
+		/*
+			s08 s07 s06 s05 s04 s03 s02 s01
+			 00  01  02  03  04  03  02  01
+			 01__..  02  03  04  03  02  01
+			 02______..  03  04  03  02  01
+			 04__________..  04  03  02  01
+			 05______________..  03  02  01
+		*/
 		{
 			name: "1.1",
 			segments: []Segment{
-				&segment{size: 1000, path: "seg_8", level: 0},
-				&segment{size: 1000, path: "seg_7", level: 1},
-				&segment{size: 1000, path: "seg_6", level: 2},
-				&segment{size: 1000, path: "seg_5", level: 3},
-				&segment{size: 1000, path: "seg_4", level: 4},
-				&segment{size: 1000, path: "seg_3", level: 3},
-				&segment{size: 1000, path: "seg_2", level: 2},
-				&segment{size: 1000, path: "seg_1", level: 1},
+				&segment{size: 1000, path: "seg_08", level: 0},
+				&segment{size: 1000, path: "seg_07", level: 1},
+				&segment{size: 1000, path: "seg_06", level: 2},
+				&segment{size: 1000, path: "seg_05", level: 3},
+				&segment{size: 1000, path: "seg_04", level: 4},
+				&segment{size: 1000, path: "seg_03", level: 3},
+				&segment{size: 1000, path: "seg_02", level: 2},
+				&segment{size: 1000, path: "seg_01", level: 1},
 			},
-			expPair: []string{"seg_8", "seg_7"},
+			expPair: []string{"seg_08", "seg_07"},
 			expLvl:  1,
 		},
 		{
 			name: "1.2",
 			segments: []Segment{
-				&segment{size: 1000, path: "seg_87", level: 1},
-				&segment{size: 1000, path: "seg_6", level: 2},
-				&segment{size: 1000, path: "seg_5", level: 3},
-				&segment{size: 1000, path: "seg_4", level: 4},
-				&segment{size: 1000, path: "seg_3", level: 3},
-				&segment{size: 1000, path: "seg_2", level: 2},
-				&segment{size: 1000, path: "seg_1", level: 1},
+				&segment{size: 1000, path: "seg_0807", level: 1},
+				&segment{size: 1000, path: "seg_06", level: 2},
+				&segment{size: 1000, path: "seg_05", level: 3},
+				&segment{size: 1000, path: "seg_04", level: 4},
+				&segment{size: 1000, path: "seg_03", level: 3},
+				&segment{size: 1000, path: "seg_02", level: 2},
+				&segment{size: 1000, path: "seg_01", level: 1},
 			},
-			expPair: []string{"seg_87", "seg_6"},
+			expPair: []string{"seg_0807", "seg_06"},
 			expLvl:  2,
 		},
 		{
 			name: "1.3",
 			segments: []Segment{
-				&segment{size: 1000, path: "seg_876", level: 2},
-				&segment{size: 1000, path: "seg_5", level: 3},
-				&segment{size: 1000, path: "seg_4", level: 4},
-				&segment{size: 1000, path: "seg_3", level: 3},
-				&segment{size: 1000, path: "seg_2", level: 2},
-				&segment{size: 1000, path: "seg_1", level: 1},
+				&segment{size: 1000, path: "seg_080706", level: 2},
+				&segment{size: 1000, path: "seg_05", level: 3},
+				&segment{size: 1000, path: "seg_04", level: 4},
+				&segment{size: 1000, path: "seg_03", level: 3},
+				&segment{size: 1000, path: "seg_02", level: 2},
+				&segment{size: 1000, path: "seg_01", level: 1},
 			},
-			expPair: []string{"seg_876", "seg_5"},
+			expPair: []string{"seg_080706", "seg_05"},
 			expLvl:  4,
 		},
 		{
 			name: "1.4",
 			segments: []Segment{
-				&segment{size: 1000, path: "seg_8765", level: 4},
-				&segment{size: 1000, path: "seg_4", level: 4},
-				&segment{size: 1000, path: "seg_3", level: 3},
-				&segment{size: 1000, path: "seg_2", level: 2},
-				&segment{size: 1000, path: "seg_1", level: 1},
+				&segment{size: 1000, path: "seg_08070605", level: 4},
+				&segment{size: 1000, path: "seg_04", level: 4},
+				&segment{size: 1000, path: "seg_03", level: 3},
+				&segment{size: 1000, path: "seg_02", level: 2},
+				&segment{size: 1000, path: "seg_01", level: 1},
 			},
-			expPair: []string{"seg_8765", "seg_4"},
+			expPair: []string{"seg_08070605", "seg_04"},
 			expLvl:  5,
 		},
 		{
 			name: "1.5",
 			segments: []Segment{
-				&segment{size: 1000, path: "seg_87654", level: 5},
-				&segment{size: 1000, path: "seg_3", level: 3},
-				&segment{size: 1000, path: "seg_2", level: 2},
-				&segment{size: 1000, path: "seg_1", level: 1},
+				&segment{size: 1000, path: "seg_0807060504", level: 5},
+				&segment{size: 1000, path: "seg_03", level: 3},
+				&segment{size: 1000, path: "seg_02", level: 2},
+				&segment{size: 1000, path: "seg_01", level: 1},
 			},
 			expPair: nil,
 			expLvl:  0,
 		},
-		// {
-		// 	name: "two segments, same level",
-		// 	segments: []Segment{
-		// 		&segment{size: 1000, path: "segment0", level: 0},
-		// 		&segment{size: 1000, path: "segment1", level: 0},
-		// 	},
-		// 	expectedPair: []string{"segment0", "segment1"},
-		// },
-		// {
-		// 	name: "multiple segments, multiple levels, lowest level is picked",
-		// 	segments: []Segment{
-		// 		&segment{size: 4000, path: "segment0", level: 2},
-		// 		&segment{size: 4000, path: "segment1", level: 2},
-		// 		&segment{size: 2000, path: "segment2", level: 1},
-		// 		&segment{size: 2000, path: "segment3", level: 1},
-		// 		&segment{size: 1000, path: "segment4", level: 0},
-		// 		&segment{size: 1000, path: "segment5", level: 0},
-		// 	},
-		// 	expectedPair: []string{"segment4", "segment5"},
-		// },
-		// {
-		// 	name: "two segments that don't fit the max size, but eliglbe segments of a lower level are present",
-		// 	segments: []Segment{
-		// 		&segment{size: 8000, path: "segment0", level: 3},
-		// 		&segment{size: 8000, path: "segment1", level: 3},
-		// 		&segment{size: 4000, path: "segment2", level: 2},
-		// 		&segment{size: 4000, path: "segment3", level: 2},
-		// 	},
-		// 	expectedPair: []string{"segment2", "segment3"},
-		// },
+
+		/*
+			s05 s04 s03 s02 s01
+			 02  04  03  02  01
+			 04__..  03  02  01
+		*/
+		{
+			name: "2.1",
+			segments: []Segment{
+				&segment{size: 1000, path: "seg_05", level: 2},
+				&segment{size: 1000, path: "seg_04", level: 4},
+				&segment{size: 1000, path: "seg_03", level: 3},
+				&segment{size: 1000, path: "seg_02", level: 2},
+				&segment{size: 1000, path: "seg_01", level: 1},
+			},
+			expPair: []string{"seg_05", "seg_04"},
+			expLvl:  4,
+		},
+		{
+			name: "2.2",
+			segments: []Segment{
+				&segment{size: 1000, path: "seg_0504", level: 4},
+				&segment{size: 1000, path: "seg_03", level: 3},
+				&segment{size: 1000, path: "seg_02", level: 2},
+				&segment{size: 1000, path: "seg_01", level: 1},
+			},
+			expPair: nil,
+			expLvl:  0,
+		},
+		/*
+			s09 s08 s07 s06 s05 s04 s03 s02 s01
+			 05  04  03  07  06  05  06  05  04
+			 05  04  03  07  06__..  06  05  04
+			 05  04  03  07  07______..  05  04
+			 05  04  03  08__..          05  04
+			 05  04__..  08              05  04
+			 08__..      08              05  04
+			 09__________..              05  04
+		*/
+		{
+			name: "3.1",
+			segments: []Segment{
+				&segment{size: 1000, path: "seg_09", level: 5},
+				&segment{size: 1000, path: "seg_08", level: 4},
+				&segment{size: 1000, path: "seg_07", level: 3},
+				&segment{size: 1000, path: "seg_06", level: 7},
+				&segment{size: 1000, path: "seg_05", level: 6},
+				&segment{size: 1000, path: "seg_04", level: 5},
+				&segment{size: 1000, path: "seg_03", level: 6},
+				&segment{size: 1000, path: "seg_02", level: 5},
+				&segment{size: 1000, path: "seg_01", level: 4},
+			},
+			expPair: []string{"seg_05", "seg_04"},
+			expLvl:  6,
+		},
+		{
+			name: "3.2",
+			segments: []Segment{
+				&segment{size: 1000, path: "seg_09", level: 5},
+				&segment{size: 1000, path: "seg_08", level: 4},
+				&segment{size: 1000, path: "seg_07", level: 3},
+				&segment{size: 1000, path: "seg_06", level: 7},
+				&segment{size: 1000, path: "seg_0504", level: 6},
+				&segment{size: 1000, path: "seg_03", level: 6},
+				&segment{size: 1000, path: "seg_02", level: 5},
+				&segment{size: 1000, path: "seg_01", level: 4},
+			},
+			expPair: []string{"seg_0504", "seg_03"},
+			expLvl:  7,
+		},
+		{
+			name: "3.3",
+			segments: []Segment{
+				&segment{size: 1000, path: "seg_09", level: 5},
+				&segment{size: 1000, path: "seg_08", level: 4},
+				&segment{size: 1000, path: "seg_07", level: 3},
+				&segment{size: 1000, path: "seg_06", level: 7},
+				&segment{size: 1000, path: "seg_050403", level: 7},
+				&segment{size: 1000, path: "seg_02", level: 5},
+				&segment{size: 1000, path: "seg_01", level: 4},
+			},
+			expPair: []string{"seg_06", "seg_050403"},
+			expLvl:  8,
+		},
+		{
+			name: "3.4",
+			segments: []Segment{
+				&segment{size: 1000, path: "seg_09", level: 5},
+				&segment{size: 1000, path: "seg_08", level: 4},
+				&segment{size: 1000, path: "seg_07", level: 3},
+				&segment{size: 1000, path: "seg_06050403", level: 8},
+				&segment{size: 1000, path: "seg_02", level: 5},
+				&segment{size: 1000, path: "seg_01", level: 4},
+			},
+			expPair: []string{"seg_08", "seg_07"},
+			expLvl:  4,
+		},
+		{
+			name: "3.5",
+			segments: []Segment{
+				&segment{size: 1000, path: "seg_09", level: 5},
+				&segment{size: 1000, path: "seg_0807", level: 4},
+				&segment{size: 1000, path: "seg_06050403", level: 8},
+				&segment{size: 1000, path: "seg_02", level: 5},
+				&segment{size: 1000, path: "seg_01", level: 4},
+			},
+			expPair: []string{"seg_09", "seg_0807"},
+			expLvl:  8,
+		},
+		{
+			name: "3.6",
+			segments: []Segment{
+				&segment{size: 1000, path: "seg_090807", level: 8},
+				&segment{size: 1000, path: "seg_06050403", level: 8},
+				&segment{size: 1000, path: "seg_02", level: 5},
+				&segment{size: 1000, path: "seg_01", level: 4},
+			},
+			expPair: []string{"seg_090807", "seg_06050403"},
+			expLvl:  9,
+		},
+		{
+			name: "3.7",
+			segments: []Segment{
+				&segment{size: 1000, path: "seg_080706050403", level: 9},
+				&segment{size: 1000, path: "seg_02", level: 5},
+				&segment{size: 1000, path: "seg_01", level: 4},
+			},
+			expPair: nil,
+			expLvl:  0,
+		},
 	}
 
 	for _, tc := range testCases {
