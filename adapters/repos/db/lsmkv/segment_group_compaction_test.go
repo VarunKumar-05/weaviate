@@ -418,6 +418,85 @@ func TestSegmentGroup_CompactionPairToFixLevelsOrder(t *testing.T) {
 			expPair: nil,
 			expLvl:  0,
 		},
+
+		/*
+			s09 s08 s07 s06 s05 s04 s03 s02 s01
+			 09  07  05  08  06  04  07  05  03
+			 09  07  05  08  06__..  07  05  03
+			 09  07  05  08__..      07  05  03
+			 09  07__..  08          07  05  03
+			 09__..      08          07  05  03
+		*/
+		{
+			name: "5.1",
+			segments: []Segment{
+				&segment{size: 1000, path: "seg_09", level: 9},
+				&segment{size: 1000, path: "seg_08", level: 7},
+				&segment{size: 1000, path: "seg_07", level: 5},
+				&segment{size: 1000, path: "seg_06", level: 8},
+				&segment{size: 1000, path: "seg_05", level: 6},
+				&segment{size: 1000, path: "seg_04", level: 4},
+				&segment{size: 1000, path: "seg_03", level: 7},
+				&segment{size: 1000, path: "seg_02", level: 5},
+				&segment{size: 1000, path: "seg_01", level: 3},
+			},
+			expPair: []string{"seg_05", "seg_04"},
+			expLvl:  6,
+		},
+		{
+			name: "5.2",
+			segments: []Segment{
+				&segment{size: 1000, path: "seg_09", level: 9},
+				&segment{size: 1000, path: "seg_08", level: 7},
+				&segment{size: 1000, path: "seg_07", level: 5},
+				&segment{size: 1000, path: "seg_06", level: 8},
+				&segment{size: 1000, path: "seg_0504", level: 6},
+				&segment{size: 1000, path: "seg_03", level: 7},
+				&segment{size: 1000, path: "seg_02", level: 5},
+				&segment{size: 1000, path: "seg_01", level: 3},
+			},
+			expPair: []string{"seg_06", "seg_0504"},
+			expLvl:  8,
+		},
+		{
+			name: "5.3",
+			segments: []Segment{
+				&segment{size: 1000, path: "seg_09", level: 9},
+				&segment{size: 1000, path: "seg_08", level: 7},
+				&segment{size: 1000, path: "seg_07", level: 5},
+				&segment{size: 1000, path: "seg_060504", level: 8},
+				&segment{size: 1000, path: "seg_03", level: 7},
+				&segment{size: 1000, path: "seg_02", level: 5},
+				&segment{size: 1000, path: "seg_01", level: 3},
+			},
+			expPair: []string{"seg_08", "seg_07"},
+			expLvl:  7,
+		},
+		{
+			name: "5.4",
+			segments: []Segment{
+				&segment{size: 1000, path: "seg_09", level: 9},
+				&segment{size: 1000, path: "seg_0807", level: 7},
+				&segment{size: 1000, path: "seg_060504", level: 8},
+				&segment{size: 1000, path: "seg_03", level: 7},
+				&segment{size: 1000, path: "seg_02", level: 5},
+				&segment{size: 1000, path: "seg_01", level: 3},
+			},
+			expPair: []string{"seg_09", "seg_0807"},
+			expLvl:  9,
+		},
+		{
+			name: "5.5",
+			segments: []Segment{
+				&segment{size: 1000, path: "seg_090807", level: 9},
+				&segment{size: 1000, path: "seg_060504", level: 8},
+				&segment{size: 1000, path: "seg_03", level: 7},
+				&segment{size: 1000, path: "seg_02", level: 5},
+				&segment{size: 1000, path: "seg_01", level: 3},
+			},
+			expPair: nil,
+			expLvl:  0,
+		},
 	}
 
 	for _, tc := range testCases {

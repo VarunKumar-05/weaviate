@@ -284,7 +284,7 @@ func (sg *SegmentGroup) findCompactionCandidates() (pair []int, level uint16) {
 				if !candidateFound {
 					// if left segment is the 1st one (right being 2nd), take max ordered level as compacted one
 					// to match ordered segments, otherwise keeps left+right ones' level
-					if lPos == 0 {
+					if lPos == 0 && orderedLvl > lLvl {
 						return []int{lPos, lPos + 1}, orderedLvl
 					}
 					return []int{lPos, lPos + 1}, lLvl
