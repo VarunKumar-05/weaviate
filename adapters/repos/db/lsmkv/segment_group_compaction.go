@@ -221,32 +221,15 @@ func (sg *SegmentGroup) findCompactionCandidates() (pair []int, level uint16) {
 	}
 
 	if matchingPairFound {
+		fmt.Printf("matching pair found\n\n")
 		return []int{matchingLeftId, matchingLeftId + 1}, matchingLevel
 	}
 	if leftoverPairFound {
+		fmt.Printf("leftover pair found\n\n")
 		return []int{leftoverLeftId, leftoverLeftId + 1}, leftoverLevel
 	}
 
-	/*
-
-	   10 09 08 07 06 05 04 03 05 04 03 02 01 00 07 06 12 11 10 09 08 07 06
-	   10 09 08 07 06 05 04 03 05 04 03 02 01 00 07_.. 12 11 10 09 08 07 06
-	   10 09 08 07 06 05 04 03 05 04 03 02 01_.. 07    12 11 10 09 08 07 06
-	   10 09 08 07 06 05 04 03 05 04 03 02_..    07    12 11 10 09 08 07 06
-	   10 09 08 07 06 05 04 03 05 04 03_..       07    12 11 10 09 08 07 06
-	   10 09 08 07 06 05 04 03 05 04_..          07    12 11 10 09 08 07 06
-	   10 09 08 07 06 05 04 03 05_..             07    12 11 10 09 08 07 06
-	   10 09 08 07 06 05 04_.. 05                07    12 11 10 09 08 07 06
-	   10 09 08 07 06 05_..    05                07    12 11 10 09 08 07 06
-	   10 09 08 07 06 06_______..                07    12 11 10 09 08 07 06
-	   10 09 08 07 07_..                         07    12 11 10 09 08 07 06
-	   10 09 08 08_..                            07    12 11 10 09 08 07 06
-	   10 09 08 08_______________________________..    12 11 10 09 08 07 06
-	   10 09 09_..                                     12 11 10 09 08 07 06
-	   10 10_..                                        12 11 10 09 08 07 06
-	   12_..                                           12 11 10 09 08 07 06
-
-	*/
+	fmt.Printf("checking unordered\n\n")
 
 	var lPos, orderedPos int
 	var lLvl, rLvl, orderedLvl uint16

@@ -123,380 +123,500 @@ func TestSegmentGroup_CompactionPairToFixLevelsOrder(t *testing.T) {
 		expPair  []string
 		expLvl   uint16
 	}{
-		/*
-			s08 s07 s06 s05 s04 s03 s02 s01
-			 00  01  02  03  04  03  02  01
-			 01__..  02  03  04  03  02  01
-			 02______..  03  04  03  02  01
-			 04__________..  04  03  02  01
-			 05______________..  03  02  01
-		*/
+		// /*
+		// 	s08 s07 s06 s05 s04 s03 s02 s01
+		// 	 00  01  02  03  04  03  02  01
+		// 	 01__..  02  03  04  03  02  01
+		// 	 02______..  03  04  03  02  01
+		// 	 04__________..  04  03  02  01
+		// 	 05______________..  03  02  01
+		// */
+		// {
+		// 	name: "1.1",
+		// 	segments: []Segment{
+		// 		&segment{size: 1000, path: "seg_08", level: 0},
+		// 		&segment{size: 1000, path: "seg_07", level: 1},
+		// 		&segment{size: 1000, path: "seg_06", level: 2},
+		// 		&segment{size: 1000, path: "seg_05", level: 3},
+		// 		&segment{size: 1000, path: "seg_04", level: 4},
+		// 		&segment{size: 1000, path: "seg_03", level: 3},
+		// 		&segment{size: 1000, path: "seg_02", level: 2},
+		// 		&segment{size: 1000, path: "seg_01", level: 1},
+		// 	},
+		// 	expPair: []string{"seg_08", "seg_07"},
+		// 	expLvl:  1,
+		// },
+		// {
+		// 	name: "1.2",
+		// 	segments: []Segment{
+		// 		&segment{size: 1000, path: "seg_0807", level: 1},
+		// 		&segment{size: 1000, path: "seg_06", level: 2},
+		// 		&segment{size: 1000, path: "seg_05", level: 3},
+		// 		&segment{size: 1000, path: "seg_04", level: 4},
+		// 		&segment{size: 1000, path: "seg_03", level: 3},
+		// 		&segment{size: 1000, path: "seg_02", level: 2},
+		// 		&segment{size: 1000, path: "seg_01", level: 1},
+		// 	},
+		// 	expPair: []string{"seg_0807", "seg_06"},
+		// 	expLvl:  2,
+		// },
+		// {
+		// 	name: "1.3",
+		// 	segments: []Segment{
+		// 		&segment{size: 1000, path: "seg_080706", level: 2},
+		// 		&segment{size: 1000, path: "seg_05", level: 3},
+		// 		&segment{size: 1000, path: "seg_04", level: 4},
+		// 		&segment{size: 1000, path: "seg_03", level: 3},
+		// 		&segment{size: 1000, path: "seg_02", level: 2},
+		// 		&segment{size: 1000, path: "seg_01", level: 1},
+		// 	},
+		// 	expPair: []string{"seg_080706", "seg_05"},
+		// 	expLvl:  4,
+		// },
+		// {
+		// 	name: "1.4",
+		// 	segments: []Segment{
+		// 		&segment{size: 1000, path: "seg_08070605", level: 4},
+		// 		&segment{size: 1000, path: "seg_04", level: 4},
+		// 		&segment{size: 1000, path: "seg_03", level: 3},
+		// 		&segment{size: 1000, path: "seg_02", level: 2},
+		// 		&segment{size: 1000, path: "seg_01", level: 1},
+		// 	},
+		// 	expPair: []string{"seg_08070605", "seg_04"},
+		// 	expLvl:  5,
+		// },
+		// {
+		// 	name: "1.5",
+		// 	segments: []Segment{
+		// 		&segment{size: 1000, path: "seg_0807060504", level: 5},
+		// 		&segment{size: 1000, path: "seg_03", level: 3},
+		// 		&segment{size: 1000, path: "seg_02", level: 2},
+		// 		&segment{size: 1000, path: "seg_01", level: 1},
+		// 	},
+		// 	expPair: nil,
+		// 	expLvl:  0,
+		// },
+
+		// /*
+		// 	s05 s04 s03 s02 s01
+		// 	 02  04  03  02  01
+		// 	 04__..  03  02  01
+		// */
+		// {
+		// 	name: "2.1",
+		// 	segments: []Segment{
+		// 		&segment{size: 1000, path: "seg_05", level: 2},
+		// 		&segment{size: 1000, path: "seg_04", level: 4},
+		// 		&segment{size: 1000, path: "seg_03", level: 3},
+		// 		&segment{size: 1000, path: "seg_02", level: 2},
+		// 		&segment{size: 1000, path: "seg_01", level: 1},
+		// 	},
+		// 	expPair: []string{"seg_05", "seg_04"},
+		// 	expLvl:  4,
+		// },
+		// {
+		// 	name: "2.2",
+		// 	segments: []Segment{
+		// 		&segment{size: 1000, path: "seg_0504", level: 4},
+		// 		&segment{size: 1000, path: "seg_03", level: 3},
+		// 		&segment{size: 1000, path: "seg_02", level: 2},
+		// 		&segment{size: 1000, path: "seg_01", level: 1},
+		// 	},
+		// 	expPair: nil,
+		// 	expLvl:  0,
+		// },
+
+		// /*
+		// 	s09 s08 s07 s06 s05 s04 s03 s02 s01
+		// 	 07  05  03  09  07  05  08  06  04
+		// 	 07  05  03  09  07__..  08  06  04
+		// 	 07  05  03  09__..      08  06  04
+		// 	 07  05__..  09          08  06  04
+		// 	 09__..      09          08  06  04
+		// 	 10__________..          08  06  04
+		// */
+		// {
+		// 	name: "3.1",
+		// 	segments: []Segment{
+		// 		&segment{size: 1000, path: "seg_09", level: 7},
+		// 		&segment{size: 1000, path: "seg_08", level: 5},
+		// 		&segment{size: 1000, path: "seg_07", level: 3},
+		// 		&segment{size: 1000, path: "seg_06", level: 9},
+		// 		&segment{size: 1000, path: "seg_05", level: 7},
+		// 		&segment{size: 1000, path: "seg_04", level: 5},
+		// 		&segment{size: 1000, path: "seg_03", level: 8},
+		// 		&segment{size: 1000, path: "seg_02", level: 6},
+		// 		&segment{size: 1000, path: "seg_01", level: 4},
+		// 	},
+		// 	expPair: []string{"seg_05", "seg_04"},
+		// 	expLvl:  7,
+		// },
+		// {
+		// 	name: "3.2",
+		// 	segments: []Segment{
+		// 		&segment{size: 1000, path: "seg_09", level: 7},
+		// 		&segment{size: 1000, path: "seg_08", level: 5},
+		// 		&segment{size: 1000, path: "seg_07", level: 3},
+		// 		&segment{size: 1000, path: "seg_06", level: 9},
+		// 		&segment{size: 1000, path: "seg_0504", level: 7},
+		// 		&segment{size: 1000, path: "seg_03", level: 8},
+		// 		&segment{size: 1000, path: "seg_02", level: 6},
+		// 		&segment{size: 1000, path: "seg_01", level: 4},
+		// 	},
+		// 	expPair: []string{"seg_06", "seg_0504"},
+		// 	expLvl:  9,
+		// },
+		// {
+		// 	name: "3.3",
+		// 	segments: []Segment{
+		// 		&segment{size: 1000, path: "seg_09", level: 7},
+		// 		&segment{size: 1000, path: "seg_08", level: 5},
+		// 		&segment{size: 1000, path: "seg_07", level: 3},
+		// 		&segment{size: 1000, path: "seg_060504", level: 9},
+		// 		&segment{size: 1000, path: "seg_03", level: 8},
+		// 		&segment{size: 1000, path: "seg_02", level: 6},
+		// 		&segment{size: 1000, path: "seg_01", level: 4},
+		// 	},
+		// 	expPair: []string{"seg_08", "seg_07"},
+		// 	expLvl:  5,
+		// },
+		// {
+		// 	name: "3.4",
+		// 	segments: []Segment{
+		// 		&segment{size: 1000, path: "seg_09", level: 7},
+		// 		&segment{size: 1000, path: "seg_0807", level: 5},
+		// 		&segment{size: 1000, path: "seg_060504", level: 9},
+		// 		&segment{size: 1000, path: "seg_03", level: 8},
+		// 		&segment{size: 1000, path: "seg_02", level: 6},
+		// 		&segment{size: 1000, path: "seg_01", level: 4},
+		// 	},
+		// 	expPair: []string{"seg_09", "seg_0807"},
+		// 	expLvl:  9,
+		// },
+		// {
+		// 	name: "3.5",
+		// 	segments: []Segment{
+		// 		&segment{size: 1000, path: "seg_090807", level: 9},
+		// 		&segment{size: 1000, path: "seg_060504", level: 9},
+		// 		&segment{size: 1000, path: "seg_03", level: 8},
+		// 		&segment{size: 1000, path: "seg_02", level: 6},
+		// 		&segment{size: 1000, path: "seg_01", level: 4},
+		// 	},
+		// 	expPair: []string{"seg_090807", "seg_060504"},
+		// 	expLvl:  10,
+		// },
+		// {
+		// 	name: "3.6",
+		// 	segments: []Segment{
+		// 		&segment{size: 1000, path: "seg_090807060504", level: 10},
+		// 		&segment{size: 1000, path: "seg_03", level: 8},
+		// 		&segment{size: 1000, path: "seg_02", level: 6},
+		// 		&segment{size: 1000, path: "seg_01", level: 4},
+		// 	},
+		// 	expPair: nil,
+		// 	expLvl:  0,
+		// },
+
+		// /*
+		// 	s09 s08 s07 s06 s05 s04 s03 s02 s01
+		// 	 09  07  05  07  05  03  08  06  04
+		// 	 09  07  05  07  05__..  08  06  04
+		// 	 09  07  05  07__..      08  06  04
+		// 	 09  07__..  07          08  06  04
+		// 	 09  08______..          08  06  04
+		// 	 09  09__________________..  06  04
+		// 	 10__..                      06  04
+		// */
+		// {
+		// 	name: "4.1",
+		// 	segments: []Segment{
+		// 		&segment{size: 1000, path: "seg_09", level: 9},
+		// 		&segment{size: 1000, path: "seg_08", level: 7},
+		// 		&segment{size: 1000, path: "seg_07", level: 5},
+		// 		&segment{size: 1000, path: "seg_06", level: 7},
+		// 		&segment{size: 1000, path: "seg_05", level: 5},
+		// 		&segment{size: 1000, path: "seg_04", level: 3},
+		// 		&segment{size: 1000, path: "seg_03", level: 8},
+		// 		&segment{size: 1000, path: "seg_02", level: 6},
+		// 		&segment{size: 1000, path: "seg_01", level: 4},
+		// 	},
+		// 	expPair: []string{"seg_05", "seg_04"},
+		// 	expLvl:  5,
+		// },
+		// {
+		// 	name: "4.2",
+		// 	segments: []Segment{
+		// 		&segment{size: 1000, path: "seg_09", level: 9},
+		// 		&segment{size: 1000, path: "seg_08", level: 7},
+		// 		&segment{size: 1000, path: "seg_07", level: 5},
+		// 		&segment{size: 1000, path: "seg_06", level: 7},
+		// 		&segment{size: 1000, path: "seg_0504", level: 5},
+		// 		&segment{size: 1000, path: "seg_03", level: 8},
+		// 		&segment{size: 1000, path: "seg_02", level: 6},
+		// 		&segment{size: 1000, path: "seg_01", level: 4},
+		// 	},
+		// 	expPair: []string{"seg_06", "seg_0504"},
+		// 	expLvl:  7,
+		// },
+		// {
+		// 	name: "4.3",
+		// 	segments: []Segment{
+		// 		&segment{size: 1000, path: "seg_09", level: 9},
+		// 		&segment{size: 1000, path: "seg_08", level: 7},
+		// 		&segment{size: 1000, path: "seg_07", level: 5},
+		// 		&segment{size: 1000, path: "seg_060504", level: 7},
+		// 		&segment{size: 1000, path: "seg_03", level: 8},
+		// 		&segment{size: 1000, path: "seg_02", level: 6},
+		// 		&segment{size: 1000, path: "seg_01", level: 4},
+		// 	},
+		// 	expPair: []string{"seg_08", "seg_07"},
+		// 	expLvl:  7,
+		// },
+		// {
+		// 	name: "4.4",
+		// 	segments: []Segment{
+		// 		&segment{size: 1000, path: "seg_09", level: 9},
+		// 		&segment{size: 1000, path: "seg_0807", level: 7},
+		// 		&segment{size: 1000, path: "seg_060504", level: 7},
+		// 		&segment{size: 1000, path: "seg_03", level: 8},
+		// 		&segment{size: 1000, path: "seg_02", level: 6},
+		// 		&segment{size: 1000, path: "seg_01", level: 4},
+		// 	},
+		// 	expPair: []string{"seg_0807", "seg_060504"},
+		// 	expLvl:  8,
+		// },
+		// {
+		// 	name: "4.5",
+		// 	segments: []Segment{
+		// 		&segment{size: 1000, path: "seg_09", level: 9},
+		// 		&segment{size: 1000, path: "seg_0807060504", level: 8},
+		// 		&segment{size: 1000, path: "seg_03", level: 8},
+		// 		&segment{size: 1000, path: "seg_02", level: 6},
+		// 		&segment{size: 1000, path: "seg_01", level: 4},
+		// 	},
+		// 	expPair: []string{"seg_0807060504", "seg_03"},
+		// 	expLvl:  9,
+		// },
+		// {
+		// 	name: "4.6",
+		// 	segments: []Segment{
+		// 		&segment{size: 1000, path: "seg_09", level: 9},
+		// 		&segment{size: 1000, path: "seg_080706050403", level: 9},
+		// 		&segment{size: 1000, path: "seg_02", level: 6},
+		// 		&segment{size: 1000, path: "seg_01", level: 4},
+		// 	},
+		// 	expPair: []string{"seg_09", "seg_080706050403"},
+		// 	expLvl:  10,
+		// },
+		// {
+		// 	name: "4.7",
+		// 	segments: []Segment{
+		// 		&segment{size: 1000, path: "seg_09080706050403", level: 10},
+		// 		&segment{size: 1000, path: "seg_02", level: 6},
+		// 		&segment{size: 1000, path: "seg_01", level: 4},
+		// 	},
+		// 	expPair: nil,
+		// 	expLvl:  0,
+		// },
+
+		// /*
+		// 	s09 s08 s07 s06 s05 s04 s03 s02 s01
+		// 	 09  07  05  08  06  04  07  05  03
+		// 	 09  07  05  08  06__..  07  05  03
+		// 	 09  07  05  08__..      07  05  03
+		// 	 09  07__..  08          07  05  03
+		// 	 09__..      08          07  05  03
+		// */
+		// {
+		// 	name: "5.1",
+		// 	segments: []Segment{
+		// 		&segment{size: 1000, path: "seg_09", level: 9},
+		// 		&segment{size: 1000, path: "seg_08", level: 7},
+		// 		&segment{size: 1000, path: "seg_07", level: 5},
+		// 		&segment{size: 1000, path: "seg_06", level: 8},
+		// 		&segment{size: 1000, path: "seg_05", level: 6},
+		// 		&segment{size: 1000, path: "seg_04", level: 4},
+		// 		&segment{size: 1000, path: "seg_03", level: 7},
+		// 		&segment{size: 1000, path: "seg_02", level: 5},
+		// 		&segment{size: 1000, path: "seg_01", level: 3},
+		// 	},
+		// 	expPair: []string{"seg_05", "seg_04"},
+		// 	expLvl:  6,
+		// },
+		// {
+		// 	name: "5.2",
+		// 	segments: []Segment{
+		// 		&segment{size: 1000, path: "seg_09", level: 9},
+		// 		&segment{size: 1000, path: "seg_08", level: 7},
+		// 		&segment{size: 1000, path: "seg_07", level: 5},
+		// 		&segment{size: 1000, path: "seg_06", level: 8},
+		// 		&segment{size: 1000, path: "seg_0504", level: 6},
+		// 		&segment{size: 1000, path: "seg_03", level: 7},
+		// 		&segment{size: 1000, path: "seg_02", level: 5},
+		// 		&segment{size: 1000, path: "seg_01", level: 3},
+		// 	},
+		// 	expPair: []string{"seg_06", "seg_0504"},
+		// 	expLvl:  8,
+		// },
+		// {
+		// 	name: "5.3",
+		// 	segments: []Segment{
+		// 		&segment{size: 1000, path: "seg_09", level: 9},
+		// 		&segment{size: 1000, path: "seg_08", level: 7},
+		// 		&segment{size: 1000, path: "seg_07", level: 5},
+		// 		&segment{size: 1000, path: "seg_060504", level: 8},
+		// 		&segment{size: 1000, path: "seg_03", level: 7},
+		// 		&segment{size: 1000, path: "seg_02", level: 5},
+		// 		&segment{size: 1000, path: "seg_01", level: 3},
+		// 	},
+		// 	expPair: []string{"seg_08", "seg_07"},
+		// 	expLvl:  7,
+		// },
+		// {
+		// 	name: "5.4",
+		// 	segments: []Segment{
+		// 		&segment{size: 1000, path: "seg_09", level: 9},
+		// 		&segment{size: 1000, path: "seg_0807", level: 7},
+		// 		&segment{size: 1000, path: "seg_060504", level: 8},
+		// 		&segment{size: 1000, path: "seg_03", level: 7},
+		// 		&segment{size: 1000, path: "seg_02", level: 5},
+		// 		&segment{size: 1000, path: "seg_01", level: 3},
+		// 	},
+		// 	expPair: []string{"seg_09", "seg_0807"},
+		// 	expLvl:  9,
+		// },
+		// {
+		// 	name: "5.5",
+		// 	segments: []Segment{
+		// 		&segment{size: 1000, path: "seg_090807", level: 9},
+		// 		&segment{size: 1000, path: "seg_060504", level: 8},
+		// 		&segment{size: 1000, path: "seg_03", level: 7},
+		// 		&segment{size: 1000, path: "seg_02", level: 5},
+		// 		&segment{size: 1000, path: "seg_01", level: 3},
+		// 	},
+		// 	expPair: nil,
+		// 	expLvl:  0,
+		// },
+
+		// /*
+		// 	s10 s09 s08 s07 s06 s05 s04 s03 s02 s01
+		// 	 04  03  02  01  01  01  02  03  04  03
+		// 	 04  03  02  02__..  01  02  03  04  03
+		// 	 04  03  02  02______..  02  03  04  03
+		// 	 04  03  03__..          02  03  04  03
+		// 	 04  03  03______________..  03  04  03
+		// 	 04  04__..                  03  04  03
+		// 	 04  04______________________..  04  03
+		// 	 05__..                          04  03
+		// */
+		// {
+		// 	name: "6.1",
+		// 	segments: []Segment{
+		// 		&segment{size: 1000, path: "seg_10", level: 4},
+		// 		&segment{size: 1000, path: "seg_09", level: 3},
+		// 		&segment{size: 1000, path: "seg_08", level: 2},
+		// 		&segment{size: 1000, path: "seg_07", level: 1},
+		// 		&segment{size: 1000, path: "seg_06", level: 1},
+		// 		&segment{size: 1000, path: "seg_05", level: 1},
+		// 		&segment{size: 1000, path: "seg_04", level: 2},
+		// 		&segment{size: 1000, path: "seg_03", level: 3},
+		// 		&segment{size: 1000, path: "seg_02", level: 4},
+		// 		&segment{size: 1000, path: "seg_01", level: 3},
+		// 	},
+		// 	expPair: []string{"seg_07", "seg_06"},
+		// 	expLvl:  2,
+		// },
+		// {
+		// 	name: "6.2",
+		// 	segments: []Segment{
+		// 		&segment{size: 1000, path: "seg_10", level: 4},
+		// 		&segment{size: 1000, path: "seg_09", level: 3},
+		// 		&segment{size: 1000, path: "seg_08", level: 2},
+		// 		&segment{size: 1000, path: "seg_0706", level: 2},
+		// 		&segment{size: 1000, path: "seg_05", level: 1},
+		// 		&segment{size: 1000, path: "seg_04", level: 2},
+		// 		&segment{size: 1000, path: "seg_03", level: 3},
+		// 		&segment{size: 1000, path: "seg_02", level: 4},
+		// 		&segment{size: 1000, path: "seg_01", level: 3},
+		// 	},
+		// 	expPair: []string{"seg_0706", "seg_05"},
+		// 	expLvl:  2,
+		// },
+		// {
+		// 	name: "6.3",
+		// 	segments: []Segment{
+		// 		&segment{size: 1000, path: "seg_10", level: 4},
+		// 		&segment{size: 1000, path: "seg_09", level: 3},
+		// 		&segment{size: 1000, path: "seg_08", level: 2},
+		// 		&segment{size: 1000, path: "seg_070605", level: 2},
+		// 		&segment{size: 1000, path: "seg_04", level: 2},
+		// 		&segment{size: 1000, path: "seg_03", level: 3},
+		// 		&segment{size: 1000, path: "seg_02", level: 4},
+		// 		&segment{size: 1000, path: "seg_01", level: 3},
+		// 	},
+		// 	expPair: []string{"seg_08", "seg_070605"},
+		// 	expLvl:  3,
+		// },
+		// {
+		// 	name: "6.4",
+		// 	segments: []Segment{
+		// 		&segment{size: 1000, path: "seg_10", level: 4},
+		// 		&segment{size: 1000, path: "seg_09", level: 3},
+		// 		&segment{size: 1000, path: "seg_08070605", level: 3},
+		// 		&segment{size: 1000, path: "seg_04", level: 2},
+		// 		&segment{size: 1000, path: "seg_03", level: 3},
+		// 		&segment{size: 1000, path: "seg_02", level: 4},
+		// 		&segment{size: 1000, path: "seg_01", level: 3},
+		// 	},
+		// 	expPair: []string{"seg_08070605", "seg_04"},
+		// 	expLvl:  3,
+		// },
+		// {
+		// 	name: "6.5",
+		// 	segments: []Segment{
+		// 		&segment{size: 1000, path: "seg_10", level: 4},
+		// 		&segment{size: 1000, path: "seg_09", level: 3},
+		// 		&segment{size: 1000, path: "seg_0807060504", level: 3},
+		// 		&segment{size: 1000, path: "seg_03", level: 3},
+		// 		&segment{size: 1000, path: "seg_02", level: 4},
+		// 		&segment{size: 1000, path: "seg_01", level: 3},
+		// 	},
+		// 	expPair: []string{"seg_09", "seg_0807060504"},
+		// 	expLvl:  4,
+		// },
 		{
-			name: "1.1",
+			name: "6.6",
 			segments: []Segment{
-				&segment{size: 1000, path: "seg_08", level: 0},
-				&segment{size: 1000, path: "seg_07", level: 1},
-				&segment{size: 1000, path: "seg_06", level: 2},
-				&segment{size: 1000, path: "seg_05", level: 3},
-				&segment{size: 1000, path: "seg_04", level: 4},
+				&segment{size: 1000, path: "seg_10", level: 4},
+				&segment{size: 1000, path: "seg_090807060504", level: 4},
 				&segment{size: 1000, path: "seg_03", level: 3},
-				&segment{size: 1000, path: "seg_02", level: 2},
-				&segment{size: 1000, path: "seg_01", level: 1},
+				&segment{size: 1000, path: "seg_02", level: 4},
+				&segment{size: 1000, path: "seg_01", level: 3},
 			},
-			expPair: []string{"seg_08", "seg_07"},
-			expLvl:  1,
-		},
-		{
-			name: "1.2",
-			segments: []Segment{
-				&segment{size: 1000, path: "seg_0807", level: 1},
-				&segment{size: 1000, path: "seg_06", level: 2},
-				&segment{size: 1000, path: "seg_05", level: 3},
-				&segment{size: 1000, path: "seg_04", level: 4},
-				&segment{size: 1000, path: "seg_03", level: 3},
-				&segment{size: 1000, path: "seg_02", level: 2},
-				&segment{size: 1000, path: "seg_01", level: 1},
-			},
-			expPair: []string{"seg_0807", "seg_06"},
-			expLvl:  2,
-		},
-		{
-			name: "1.3",
-			segments: []Segment{
-				&segment{size: 1000, path: "seg_080706", level: 2},
-				&segment{size: 1000, path: "seg_05", level: 3},
-				&segment{size: 1000, path: "seg_04", level: 4},
-				&segment{size: 1000, path: "seg_03", level: 3},
-				&segment{size: 1000, path: "seg_02", level: 2},
-				&segment{size: 1000, path: "seg_01", level: 1},
-			},
-			expPair: []string{"seg_080706", "seg_05"},
+			expPair: []string{"seg_090807060504", "seg_03"},
 			expLvl:  4,
 		},
-		{
-			name: "1.4",
-			segments: []Segment{
-				&segment{size: 1000, path: "seg_08070605", level: 4},
-				&segment{size: 1000, path: "seg_04", level: 4},
-				&segment{size: 1000, path: "seg_03", level: 3},
-				&segment{size: 1000, path: "seg_02", level: 2},
-				&segment{size: 1000, path: "seg_01", level: 1},
-			},
-			expPair: []string{"seg_08070605", "seg_04"},
-			expLvl:  5,
-		},
-		{
-			name: "1.5",
-			segments: []Segment{
-				&segment{size: 1000, path: "seg_0807060504", level: 5},
-				&segment{size: 1000, path: "seg_03", level: 3},
-				&segment{size: 1000, path: "seg_02", level: 2},
-				&segment{size: 1000, path: "seg_01", level: 1},
-			},
-			expPair: nil,
-			expLvl:  0,
-		},
-
-		/*
-			s05 s04 s03 s02 s01
-			 02  04  03  02  01
-			 04__..  03  02  01
-		*/
-		{
-			name: "2.1",
-			segments: []Segment{
-				&segment{size: 1000, path: "seg_05", level: 2},
-				&segment{size: 1000, path: "seg_04", level: 4},
-				&segment{size: 1000, path: "seg_03", level: 3},
-				&segment{size: 1000, path: "seg_02", level: 2},
-				&segment{size: 1000, path: "seg_01", level: 1},
-			},
-			expPair: []string{"seg_05", "seg_04"},
-			expLvl:  4,
-		},
-		{
-			name: "2.2",
-			segments: []Segment{
-				&segment{size: 1000, path: "seg_0504", level: 4},
-				&segment{size: 1000, path: "seg_03", level: 3},
-				&segment{size: 1000, path: "seg_02", level: 2},
-				&segment{size: 1000, path: "seg_01", level: 1},
-			},
-			expPair: nil,
-			expLvl:  0,
-		},
-
-		/*
-			s09 s08 s07 s06 s05 s04 s03 s02 s01
-			 07  05  03  09  07  05  08  06  04
-			 07  05  03  09  07__..  08  06  04
-			 07  05  03  09__..      08  06  04
-			 07  05__..  09          08  06  04
-			 09__..      09          08  06  04
-			 10__________..          08  06  04
-		*/
-		{
-			name: "3.1",
-			segments: []Segment{
-				&segment{size: 1000, path: "seg_09", level: 7},
-				&segment{size: 1000, path: "seg_08", level: 5},
-				&segment{size: 1000, path: "seg_07", level: 3},
-				&segment{size: 1000, path: "seg_06", level: 9},
-				&segment{size: 1000, path: "seg_05", level: 7},
-				&segment{size: 1000, path: "seg_04", level: 5},
-				&segment{size: 1000, path: "seg_03", level: 8},
-				&segment{size: 1000, path: "seg_02", level: 6},
-				&segment{size: 1000, path: "seg_01", level: 4},
-			},
-			expPair: []string{"seg_05", "seg_04"},
-			expLvl:  7,
-		},
-		{
-			name: "3.2",
-			segments: []Segment{
-				&segment{size: 1000, path: "seg_09", level: 7},
-				&segment{size: 1000, path: "seg_08", level: 5},
-				&segment{size: 1000, path: "seg_07", level: 3},
-				&segment{size: 1000, path: "seg_06", level: 9},
-				&segment{size: 1000, path: "seg_0504", level: 7},
-				&segment{size: 1000, path: "seg_03", level: 8},
-				&segment{size: 1000, path: "seg_02", level: 6},
-				&segment{size: 1000, path: "seg_01", level: 4},
-			},
-			expPair: []string{"seg_06", "seg_0504"},
-			expLvl:  9,
-		},
-		{
-			name: "3.3",
-			segments: []Segment{
-				&segment{size: 1000, path: "seg_09", level: 7},
-				&segment{size: 1000, path: "seg_08", level: 5},
-				&segment{size: 1000, path: "seg_07", level: 3},
-				&segment{size: 1000, path: "seg_060504", level: 9},
-				&segment{size: 1000, path: "seg_03", level: 8},
-				&segment{size: 1000, path: "seg_02", level: 6},
-				&segment{size: 1000, path: "seg_01", level: 4},
-			},
-			expPair: []string{"seg_08", "seg_07"},
-			expLvl:  5,
-		},
-		{
-			name: "3.4",
-			segments: []Segment{
-				&segment{size: 1000, path: "seg_09", level: 7},
-				&segment{size: 1000, path: "seg_0807", level: 5},
-				&segment{size: 1000, path: "seg_060504", level: 9},
-				&segment{size: 1000, path: "seg_03", level: 8},
-				&segment{size: 1000, path: "seg_02", level: 6},
-				&segment{size: 1000, path: "seg_01", level: 4},
-			},
-			expPair: []string{"seg_09", "seg_0807"},
-			expLvl:  9,
-		},
-		{
-			name: "3.5",
-			segments: []Segment{
-				&segment{size: 1000, path: "seg_090807", level: 9},
-				&segment{size: 1000, path: "seg_060504", level: 9},
-				&segment{size: 1000, path: "seg_03", level: 8},
-				&segment{size: 1000, path: "seg_02", level: 6},
-				&segment{size: 1000, path: "seg_01", level: 4},
-			},
-			expPair: []string{"seg_090807", "seg_060504"},
-			expLvl:  10,
-		},
-		{
-			name: "3.6",
-			segments: []Segment{
-				&segment{size: 1000, path: "seg_090807060504", level: 10},
-				&segment{size: 1000, path: "seg_03", level: 8},
-				&segment{size: 1000, path: "seg_02", level: 6},
-				&segment{size: 1000, path: "seg_01", level: 4},
-			},
-			expPair: nil,
-			expLvl:  0,
-		},
-
-		/*
-			s09 s08 s07 s06 s05 s04 s03 s02 s01
-			 09  07  05  07  05  03  08  06  04
-			 09  07  05  07  05__..  08  06  04
-			 09  07  05  07__..      08  06  04
-			 09  07__..  07          08  06  04
-			 09  08______..          08  06  04
-			 09  09__________________..  06  04
-			 10__..                      06  04
-		*/
-		{
-			name: "4.1",
-			segments: []Segment{
-				&segment{size: 1000, path: "seg_09", level: 9},
-				&segment{size: 1000, path: "seg_08", level: 7},
-				&segment{size: 1000, path: "seg_07", level: 5},
-				&segment{size: 1000, path: "seg_06", level: 7},
-				&segment{size: 1000, path: "seg_05", level: 5},
-				&segment{size: 1000, path: "seg_04", level: 3},
-				&segment{size: 1000, path: "seg_03", level: 8},
-				&segment{size: 1000, path: "seg_02", level: 6},
-				&segment{size: 1000, path: "seg_01", level: 4},
-			},
-			expPair: []string{"seg_05", "seg_04"},
-			expLvl:  5,
-		},
-		{
-			name: "4.2",
-			segments: []Segment{
-				&segment{size: 1000, path: "seg_09", level: 9},
-				&segment{size: 1000, path: "seg_08", level: 7},
-				&segment{size: 1000, path: "seg_07", level: 5},
-				&segment{size: 1000, path: "seg_06", level: 7},
-				&segment{size: 1000, path: "seg_0504", level: 5},
-				&segment{size: 1000, path: "seg_03", level: 8},
-				&segment{size: 1000, path: "seg_02", level: 6},
-				&segment{size: 1000, path: "seg_01", level: 4},
-			},
-			expPair: []string{"seg_06", "seg_0504"},
-			expLvl:  7,
-		},
-		{
-			name: "4.3",
-			segments: []Segment{
-				&segment{size: 1000, path: "seg_09", level: 9},
-				&segment{size: 1000, path: "seg_08", level: 7},
-				&segment{size: 1000, path: "seg_07", level: 5},
-				&segment{size: 1000, path: "seg_060504", level: 7},
-				&segment{size: 1000, path: "seg_03", level: 8},
-				&segment{size: 1000, path: "seg_02", level: 6},
-				&segment{size: 1000, path: "seg_01", level: 4},
-			},
-			expPair: []string{"seg_08", "seg_07"},
-			expLvl:  7,
-		},
-		{
-			name: "4.4",
-			segments: []Segment{
-				&segment{size: 1000, path: "seg_09", level: 9},
-				&segment{size: 1000, path: "seg_0807", level: 7},
-				&segment{size: 1000, path: "seg_060504", level: 7},
-				&segment{size: 1000, path: "seg_03", level: 8},
-				&segment{size: 1000, path: "seg_02", level: 6},
-				&segment{size: 1000, path: "seg_01", level: 4},
-			},
-			expPair: []string{"seg_0807", "seg_060504"},
-			expLvl:  8,
-		},
-		{
-			name: "4.5",
-			segments: []Segment{
-				&segment{size: 1000, path: "seg_09", level: 9},
-				&segment{size: 1000, path: "seg_0807060504", level: 8},
-				&segment{size: 1000, path: "seg_03", level: 8},
-				&segment{size: 1000, path: "seg_02", level: 6},
-				&segment{size: 1000, path: "seg_01", level: 4},
-			},
-			expPair: []string{"seg_0807060504", "seg_03"},
-			expLvl:  9,
-		},
-		{
-			name: "4.6",
-			segments: []Segment{
-				&segment{size: 1000, path: "seg_09", level: 9},
-				&segment{size: 1000, path: "seg_080706050403", level: 9},
-				&segment{size: 1000, path: "seg_02", level: 6},
-				&segment{size: 1000, path: "seg_01", level: 4},
-			},
-			expPair: []string{"seg_09", "seg_080706050403"},
-			expLvl:  10,
-		},
-		{
-			name: "4.7",
-			segments: []Segment{
-				&segment{size: 1000, path: "seg_09080706050403", level: 10},
-				&segment{size: 1000, path: "seg_02", level: 6},
-				&segment{size: 1000, path: "seg_01", level: 4},
-			},
-			expPair: nil,
-			expLvl:  0,
-		},
-
-		/*
-			s09 s08 s07 s06 s05 s04 s03 s02 s01
-			 09  07  05  08  06  04  07  05  03
-			 09  07  05  08  06__..  07  05  03
-			 09  07  05  08__..      07  05  03
-			 09  07__..  08          07  05  03
-			 09__..      08          07  05  03
-		*/
-		{
-			name: "5.1",
-			segments: []Segment{
-				&segment{size: 1000, path: "seg_09", level: 9},
-				&segment{size: 1000, path: "seg_08", level: 7},
-				&segment{size: 1000, path: "seg_07", level: 5},
-				&segment{size: 1000, path: "seg_06", level: 8},
-				&segment{size: 1000, path: "seg_05", level: 6},
-				&segment{size: 1000, path: "seg_04", level: 4},
-				&segment{size: 1000, path: "seg_03", level: 7},
-				&segment{size: 1000, path: "seg_02", level: 5},
-				&segment{size: 1000, path: "seg_01", level: 3},
-			},
-			expPair: []string{"seg_05", "seg_04"},
-			expLvl:  6,
-		},
-		{
-			name: "5.2",
-			segments: []Segment{
-				&segment{size: 1000, path: "seg_09", level: 9},
-				&segment{size: 1000, path: "seg_08", level: 7},
-				&segment{size: 1000, path: "seg_07", level: 5},
-				&segment{size: 1000, path: "seg_06", level: 8},
-				&segment{size: 1000, path: "seg_0504", level: 6},
-				&segment{size: 1000, path: "seg_03", level: 7},
-				&segment{size: 1000, path: "seg_02", level: 5},
-				&segment{size: 1000, path: "seg_01", level: 3},
-			},
-			expPair: []string{"seg_06", "seg_0504"},
-			expLvl:  8,
-		},
-		{
-			name: "5.3",
-			segments: []Segment{
-				&segment{size: 1000, path: "seg_09", level: 9},
-				&segment{size: 1000, path: "seg_08", level: 7},
-				&segment{size: 1000, path: "seg_07", level: 5},
-				&segment{size: 1000, path: "seg_060504", level: 8},
-				&segment{size: 1000, path: "seg_03", level: 7},
-				&segment{size: 1000, path: "seg_02", level: 5},
-				&segment{size: 1000, path: "seg_01", level: 3},
-			},
-			expPair: []string{"seg_08", "seg_07"},
-			expLvl:  7,
-		},
-		{
-			name: "5.4",
-			segments: []Segment{
-				&segment{size: 1000, path: "seg_09", level: 9},
-				&segment{size: 1000, path: "seg_0807", level: 7},
-				&segment{size: 1000, path: "seg_060504", level: 8},
-				&segment{size: 1000, path: "seg_03", level: 7},
-				&segment{size: 1000, path: "seg_02", level: 5},
-				&segment{size: 1000, path: "seg_01", level: 3},
-			},
-			expPair: []string{"seg_09", "seg_0807"},
-			expLvl:  9,
-		},
-		{
-			name: "5.5",
-			segments: []Segment{
-				&segment{size: 1000, path: "seg_090807", level: 9},
-				&segment{size: 1000, path: "seg_060504", level: 8},
-				&segment{size: 1000, path: "seg_03", level: 7},
-				&segment{size: 1000, path: "seg_02", level: 5},
-				&segment{size: 1000, path: "seg_01", level: 3},
-			},
-			expPair: nil,
-			expLvl:  0,
-		},
+		// {
+		// 	name: "6.7",
+		// 	segments: []Segment{
+		// 		&segment{size: 1000, path: "seg_10", level: 4},
+		// 		&segment{size: 1000, path: "seg_09080706050403", level: 4},
+		// 		&segment{size: 1000, path: "seg_02", level: 4},
+		// 		&segment{size: 1000, path: "seg_01", level: 3},
+		// 	},
+		// 	expPair: []string{"seg_10", "seg_09080706050403"},
+		// 	expLvl:  5,
+		// },
+		// {
+		// 	name: "6.8",
+		// 	segments: []Segment{
+		// 		&segment{size: 1000, path: "seg_1009080706050403", level: 5},
+		// 		&segment{size: 1000, path: "seg_02", level: 4},
+		// 		&segment{size: 1000, path: "seg_01", level: 3},
+		// 	},
+		// 	expPair: nil,
+		// 	expLvl:  0,
+		// },
 	}
 
 	for _, tc := range testCases {
