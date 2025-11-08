@@ -163,6 +163,70 @@ func (sg *SegmentGroup) findCompactionCandidates() (pair []int, level uint16) {
 		return nil, 0
 	}
 
+	matchingPairFound := false
+	leftoverPairFound := false
+	var matchingLeftId, leftoverLeftId int
+	var matchingLevel, leftoverLevel uint16
+
+	// as newest segments are prioritized, loop in reverse order
+	for leftId := len(sg.segments) - 2; leftId >= 0; leftId-- {
+		left, right := sg.segments[leftId], sg.segments[leftId+1]
+
+		if left.getLevel() == right.getLevel() {
+			if left.getSecondaryIndexCount() != right.getSecondaryIndexCount() {
+				// only pair of segments with the same secondary indexes are compacted
+				continue
+			}
+			if sg.compactionFitsSizeLimit(left, right) {
+				// max size not exceeded
+				matchingPairFound = true
+				matchingLeftId = leftId
+
+				// this is for bucket migrations with re-ingestion, specifically
+				// for the new incoming data (ingest) bucket.
+				// we don't want to change the level of the segments on ingest data,
+				// so that, when we copy the segments to the bucket with the reingested
+				// data, the levels are all still at zero, and they can be compacted
+				// with the existing re-ingested segments.
+				if sg.keepLevelCompaction {
+					matchingLevel = left.getLevel()
+				} else {
+					matchingLevel = left.getLevel() + 1
+				}
+			} else if matchingPairFound {
+				// older segment of same level as pair's level exist.
+				// keep unchanged level
+				matchingLevel = left.getLevel()
+			}
+		} else {
+			if matchingPairFound {
+				// moving to segments of higher level, but matching pair is already found.
+				// stop further search
+				break
+			}
+			if sg.compactLeftOverSegments && !leftoverPairFound {
+				if left.getSecondaryIndexCount() != right.getSecondaryIndexCount() {
+					// only pair of segments with the same secondary indexes are compacted
+					continue
+				}
+				// leftover segments enabled, none leftover pair found yet
+				if sg.compactionFitsSizeLimit(left, right) && isSimilarSegmentSizes(left.Size(), right.Size()) {
+					// max size not exceeded, segment sizes similar despite different levels
+					leftoverPairFound = true
+					leftoverLeftId = leftId
+					leftoverLevel = left.getLevel()
+				}
+			}
+		}
+	}
+
+	if matchingPairFound {
+		return []int{matchingLeftId, matchingLeftId + 1}, matchingLevel
+	}
+	if leftoverPairFound {
+		return []int{leftoverLeftId, leftoverLeftId + 1}, leftoverLevel
+	}
+
 	/*
 
 	   10 09 08 07 06 05 04 03 05 04 03 02 01 00 07 06 12 11 10 09 08 07 06
@@ -241,69 +305,6 @@ func (sg *SegmentGroup) findCompactionCandidates() (pair []int, level uint16) {
 		return []int{lPos, lPos + 1}, rLvl
 	}
 
-	matchingPairFound := false
-	leftoverPairFound := false
-	var matchingLeftId, leftoverLeftId int
-	var matchingLevel, leftoverLevel uint16
-
-	// as newest segments are prioritized, loop in reverse order
-	for leftId := len(sg.segments) - 2; leftId >= 0; leftId-- {
-		left, right := sg.segments[leftId], sg.segments[leftId+1]
-
-		if left.getLevel() == right.getLevel() {
-			if left.getSecondaryIndexCount() != right.getSecondaryIndexCount() {
-				// only pair of segments with the same secondary indexes are compacted
-				continue
-			}
-			if sg.compactionFitsSizeLimit(left, right) {
-				// max size not exceeded
-				matchingPairFound = true
-				matchingLeftId = leftId
-
-				// this is for bucket migrations with re-ingestion, specifically
-				// for the new incoming data (ingest) bucket.
-				// we don't want to change the level of the segments on ingest data,
-				// so that, when we copy the segments to the bucket with the reingested
-				// data, the levels are all still at zero, and they can be compacted
-				// with the existing re-ingested segments.
-				if sg.keepLevelCompaction {
-					matchingLevel = left.getLevel()
-				} else {
-					matchingLevel = left.getLevel() + 1
-				}
-			} else if matchingPairFound {
-				// older segment of same level as pair's level exist.
-				// keep unchanged level
-				matchingLevel = left.getLevel()
-			}
-		} else {
-			if matchingPairFound {
-				// moving to segments of higher level, but matching pair is already found.
-				// stop further search
-				break
-			}
-			if sg.compactLeftOverSegments && !leftoverPairFound {
-				if left.getSecondaryIndexCount() != right.getSecondaryIndexCount() {
-					// only pair of segments with the same secondary indexes are compacted
-					continue
-				}
-				// leftover segments enabled, none leftover pair found yet
-				if sg.compactionFitsSizeLimit(left, right) && isSimilarSegmentSizes(left.Size(), right.Size()) {
-					// max size not exceeded, segment sizes similar despite different levels
-					leftoverPairFound = true
-					leftoverLeftId = leftId
-					leftoverLevel = left.getLevel()
-				}
-			}
-		}
-	}
-
-	if matchingPairFound {
-		return []int{matchingLeftId, matchingLeftId + 1}, matchingLevel
-	}
-	if leftoverPairFound {
-		return []int{leftoverLeftId, leftoverLeftId + 1}, leftoverLevel
-	}
 	return nil, 0
 }
 
